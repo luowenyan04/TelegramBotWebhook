@@ -1,8 +1,43 @@
 spring:
   application:
     name: TelegramBotWebhook
-bot:
-  token: 7567578426:AAFoT93QBEw2lCxGItmQvF1PtafrUWXSVb4
-  username: multi_tg_test_001_bot
-  webhook-domain: https://0b5b-106-105-244-78.ngrok-free.app
-  register-path: /webhook
+  datasource:
+    url: jdbc:mysql://localhost:3306/telegrambot?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: botuser
+    password: botpassword
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:import.sql
+      continue-on-error: true  # 若有錯誤繼續執行
+
+# 配置日誌層級
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    com.example.telegrambotwebhook: DEBUG
+    org.hibernate.SQL: DEBUG
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    urls[0].url: /api-docs
+    urls[0].name: API V1
+
+telegram-bot:
+  webhookDomain: https://0b5b-106-105-244-78.ngrok-free.app
+  registerPath: /webhook

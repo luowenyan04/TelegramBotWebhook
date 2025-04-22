@@ -1,46 +1,36 @@
 package com.example.telegrambotwebhook.service;
 
-import com.example.telegrambotwebhook.config.BotConfig;
-import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updates.DeleteWebhook;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
-@Component
 public class TelegramBot extends TelegramWebhookBot {
 
-    private final BotConfig config;
+    @Getter
+    private final String botUsername;
+    private final String botPath;
 
-    public TelegramBot(BotConfig config) {
-        super(config.getBotToken());
-        this.config = config;
-    }
-
-    @PostConstruct
-    public void init() {
-        SetWebhook webhook = SetWebhook.builder()
-                .url(config.getWebhookDomain() + config.getRegisterPath())
-                .build();
-        log.info("設定完成 Webhook: {}", webhook);
-    }
-
-    @Override
-    public String getBotUsername() {
-        return config.getBotUsername();
+    public TelegramBot(String botToken, String botUsername, String botPath) {
+        super(botToken);
+        this.botUsername = botUsername;
+        this.botPath = botPath;
     }
 
     @Override
     public String getBotPath() {
-        return config.getWebhookDomain();
+        return botPath;
     }
 
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
+        log.debug("收到 Webhook 更新: {}", update);
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
@@ -52,16 +42,39 @@ public class TelegramBot extends TelegramWebhookBot {
     }
 
     private SendMessage handleMessage(long chatId, String messageText) {
-        log.info("收到訊息: {}", messageText);
+        log.info("機器人 {} 收到訊息: {}", botUsername, messageText);
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
 
         if (messageText.equals("/start")) {
-            message.setText("您好！歡迎使用此 Telegram Bot。");
+            message.setText("您好！歡迎使用 " + botUsername + " Bot。");
         } else {
-            message.setText("您發送的訊息: " + messageText);
+            message.setText("您發送給 " + botUsername + " 的訊息: " + messageText);
         }
 
         return message;
+    }
+
+    /**
+     * 設定 Webhook URL
+     *
+     * @param setWebhook Webhook 設定資訊
+     * @throws TelegramApiException 如果設定失敗
+     */
+    public void setWebhook(SetWebhook setWebhook) throws TelegramApiException {
+        log.info("為機器人 {} 設定 Webhook: {}", botUsername, setWebhook.getUrl());
+        execute(setWebhook);
+    }
+
+    /**
+     * 移除 Webhook 設定
+     *
+     * @throws TelegramApiException 如果移除失敗
+     */
+    public void deleteWebhook() throws TelegramApiException {
+        log.info("正在取消機器人 {} 的 webhook 設定", botUsername);
+        DeleteWebhook deleteWebhook = new DeleteWebhook();
+        execute(deleteWebhook);
+        log.info("機器人 {} 的 webhook 已成功取消", botUsername);
     }
 }
