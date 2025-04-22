@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: TelegramBotWebhook
+bot:
+  token: 7567578426:AAFoT93QBEw2lCxGItmQvF1PtafrUWXSVb4
+  username: multi_tg_test_001_bot
+  webhook-domain: https://0b5b-106-105-244-78.ngrok-free.app
+  register-path: /webhook
