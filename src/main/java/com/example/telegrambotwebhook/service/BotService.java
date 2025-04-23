@@ -212,7 +212,10 @@ public class BotService {
      */
     @CacheEvict(value = CacheConfig.BOT_CACHE, allEntries = true)
     public void evictAllBotCache() {
-        log.info("清除所有機器人快取");
+        log.info("開始清除所有機器人快取");
+        long botCount = botRepository.count();
+        log.info("系統中共有 {} 個機器人的快取資料被清除", botCount);
+        log.info("快取清除成功完成");
     }
 
     /**

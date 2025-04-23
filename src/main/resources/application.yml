@@ -20,6 +20,15 @@ spring:
       mode: always
       data-locations: classpath:import.sql
       continue-on-error: true  # 若有錯誤繼續執行
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: telegram-bot-group
+      auto-offset-reset: earliest
+
+kafka:
+  topic:
+    cache-clear: bot-cache-clear
 
 # 配置日誌層級
 logging:
