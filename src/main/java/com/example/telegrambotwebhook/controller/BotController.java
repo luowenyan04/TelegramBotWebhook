@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -80,6 +81,13 @@ public class BotController {
                 .build();
 
         BotEntity savedBot = botService.saveBot(botEntity);
+
+        botService.notifyBotUpdated(savedBot.getUsername());
+
+        if (Boolean.TRUE.equals(savedBot.getEnable())) {
+            botService.notifyWebhookRegistered(savedBot.getUsername());
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(savedBot);
     }
 
@@ -97,9 +105,13 @@ public class BotController {
             @RequestBody BotUpdateRequest request) {
         log.info("更新機器人 ID: {}", request.getId());
 
-        if (botService.getBotById(request.getId()).isEmpty()) {
+        Optional<BotEntity> existingBot = botService.getBotById(request.getId());
+        if (existingBot.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+
+        boolean wasEnabled = Boolean.TRUE.equals(existingBot.get().getEnable());
+        boolean willBeEnabled = Boolean.TRUE.equals(request.getEnable());
 
         BotEntity botEntity = BotEntity.builder()
                 .id(request.getId())
@@ -109,6 +121,12 @@ public class BotController {
                 .build();
 
         BotEntity updatedBot = botService.saveBot(botEntity);
+        botService.notifyBotUpdated(updatedBot.getUsername());
+
+        if (willBeEnabled && !wasEnabled) {
+            botService.notifyWebhookRegistered(updatedBot.getUsername());
+        }
+
         return ResponseEntity.ok(updatedBot);
     }
 
@@ -124,11 +142,20 @@ public class BotController {
             @RequestBody BotIdRequest request) {
         log.info("啟用機器人 ID: {}", request.getId());
 
-        if (botService.getBotById(request.getId()).isEmpty()) {
+        Optional<BotEntity> existingBot = botService.getBotById(request.getId());
+        if (existingBot.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
+        String username = existingBot.get().getUsername();
+        boolean wasEnabled = Boolean.TRUE.equals(existingBot.get().getEnable());
+
         botService.enableBot(request.getId());
+        botService.notifyBotUpdated(username);
+        if (!wasEnabled) {
+            botService.notifyWebhookRegistered(username);
+        }
+
         return ResponseEntity.ok().build();
     }
 
@@ -143,12 +170,13 @@ public class BotController {
             @Parameter(description = "機器人 ID", required = true)
             @RequestBody BotIdRequest request) {
         log.info("停用機器人 ID: {}", request.getId());
-
-        if (botService.getBotById(request.getId()).isEmpty()) {
+        Optional<BotEntity> existingBot = botService.getBotById(request.getId());
+        if (existingBot.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
+        String username = existingBot.get().getUsername();
         botService.disableBot(request.getId());
+        botService.notifyBotUpdated(username);
         return ResponseEntity.ok().build();
     }
 
@@ -164,11 +192,13 @@ public class BotController {
             @RequestBody BotIdRequest request) {
         log.info("刪除機器人 ID: {}", request.getId());
 
-        if (botService.getBotById(request.getId()).isEmpty()) {
+        Optional<BotEntity> existingBot = botService.getBotById(request.getId());
+        if (existingBot.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
+        String username = existingBot.get().getUsername();
         botService.deleteBot(request.getId());
+        botService.notifyBotUpdated(username);
         return ResponseEntity.noContent().build();
     }
 }

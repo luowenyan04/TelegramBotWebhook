@@ -14,11 +14,14 @@ public class CacheClearListener {
     private final BotService botService;
 
     @KafkaListener(topics = "${kafka.topic.cache-clear}", groupId = "${spring.kafka.consumer.group-id}")
-    public void listenCacheClearMessages(String message) {
-        log.info("收到快取清除消息: {}", message);
-
-        // 清除所有機器人快取
+    public void clearAllBotCache(String message) {
+        log.info("Received cache clear message: {}", message);
         botService.evictAllBotCache();
-        log.info("已完成所有快取清除操作");
+    }
+
+    @KafkaListener(topics = "${kafka.topic.bot-update}", groupId = "${spring.kafka.consumer.group-id}")
+    public void clearBotUpdateCache(String username) {
+        log.info("Received bot update message: {}", username);
+        botService.evictBotCache(username);
     }
 }

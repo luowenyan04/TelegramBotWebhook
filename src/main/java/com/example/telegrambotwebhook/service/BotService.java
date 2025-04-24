@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -19,6 +21,29 @@ public class BotService {
 
     private final BotRepository botRepository;
     private final BotManager botManager;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+
+    @Value("${kafka.topic.bot-update}")
+    private String botUpdateTopic;
+
+    @Value("${kafka.topic.webhook-registered}")
+    private String webhookRegisteredTopic;
+
+    /**
+     * 發送 Bot 更新通知
+     */
+    public void notifyBotUpdated(String username) {
+        log.info("發送 Bot 更新通知: {}", username);
+        kafkaTemplate.send(botUpdateTopic, username);
+    }
+
+    /**
+     * 發送 Webhook 註冊通知
+     */
+    public void notifyWebhookRegistered(String username) {
+        log.info("發送 Webhook 註冊通知: {}", username);
+        kafkaTemplate.send(webhookRegisteredTopic, username);
+    }
 
     /**
      * 獲取所有機器人

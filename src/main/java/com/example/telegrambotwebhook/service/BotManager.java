@@ -155,4 +155,22 @@ public class BotManager {
     public boolean isWebhookRegistered(String username) {
         return registeredWebhooks.contains(username);
     }
+
+    /**
+     * 僅更新本地的 webhook 註冊狀態，不調用 Telegram API
+     */
+    public void updateLocalWebhookStatus(String username, boolean registered) {
+        webhookLock.lock();
+        try {
+            if (registered) {
+                registeredWebhooks.add(username);
+                log.info("已在本地標記 Bot {} 的 webhook 為已註冊", username);
+            } else {
+                registeredWebhooks.remove(username);
+                log.info("已在本地標記 Bot {} 的 webhook 為未註冊", username);
+            }
+        } finally {
+            webhookLock.unlock();
+        }
+    }
 }

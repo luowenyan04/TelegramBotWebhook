@@ -17,7 +17,7 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
   sql:
     init:
-      mode: always
+      mode: never
       data-locations: classpath:import.sql
       continue-on-error: true  # 若有錯誤繼續執行
   kafka:
@@ -28,7 +28,9 @@ spring:
 
 kafka:
   topic:
-    cache-clear: bot-cache-clear
+    cache-clear: bot-cache-clear       # 現有主題，用於清除所有快取
+    bot-update: bot-update             # 新增主題，用於通知特定 Bot 更新
+    webhook-registered: webhook-registered  # 新增主題，用於 webhook 註冊通知
 
 # 配置日誌層級
 logging:
@@ -47,6 +49,9 @@ springdoc:
     urls[0].url: /api-docs
     urls[0].name: API V1
 
+#telegram-bot:
+#  webhookDomain: https://0b5b-106-105-244-78.ngrok-free.app
+#  registerPath: /webhook
 telegram-bot:
-  webhookDomain: https://0b5b-106-105-244-78.ngrok-free.app
+  webhookDomain: ${TELEGRAM_BOT_WEBHOOK_DOMAIN:https://9404-106-105-244-78.ngrok-free.app}
   registerPath: /webhook

@@ -39,6 +39,42 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  app-node-1:
+    build: .
+    container_name: telegram-bot-app-1
+    restart: always
+    environment:
+      SPRING_APPLICATION_NAME: telegram-bot-app-1
+      TELEGRAM_BOT_WEBHOOK_DOMAIN: https://9404-106-105-244-78.ngrok-free.app  # 本地測試用 localhost
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/telegrambot?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      - mysql
+      - kafka
+
+  app-node-2:
+    build: .
+    container_name: telegram-bot-app-2
+    restart: always
+    environment:
+      SPRING_APPLICATION_NAME: telegram-bot-app-2
+      TELEGRAM_BOT_WEBHOOK_DOMAIN: https://9404-106-105-244-78.ngrok-free.app # 本地測試用 localhost
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/telegrambot?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      - mysql
+      - kafka
+
+  nginx:
+    image: nginx:latest
+    container_name: telegram-bot-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app-node-1
+      - app-node-2
 
 volumes:
   mysql-data:
