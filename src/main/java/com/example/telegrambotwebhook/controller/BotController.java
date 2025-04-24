@@ -80,14 +80,7 @@ public class BotController {
                 .enable(request.getEnable())
                 .build();
 
-        BotEntity savedBot = botService.saveBot(botEntity);
-
-        botService.notifyBotUpdated(savedBot.getUsername());
-
-        if (Boolean.TRUE.equals(savedBot.getEnable())) {
-            botService.notifyWebhookRegistered(savedBot.getUsername());
-        }
-
+        BotEntity savedBot = botService.createBot(botEntity);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedBot);
     }
 
@@ -105,14 +98,6 @@ public class BotController {
             @RequestBody BotUpdateRequest request) {
         log.info("更新機器人 ID: {}", request.getId());
 
-        Optional<BotEntity> existingBot = botService.getBotById(request.getId());
-        if (existingBot.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        boolean wasEnabled = Boolean.TRUE.equals(existingBot.get().getEnable());
-        boolean willBeEnabled = Boolean.TRUE.equals(request.getEnable());
-
         BotEntity botEntity = BotEntity.builder()
                 .id(request.getId())
                 .username(request.getUsername())
@@ -120,11 +105,9 @@ public class BotController {
                 .enable(request.getEnable())
                 .build();
 
-        BotEntity updatedBot = botService.saveBot(botEntity);
-        botService.notifyBotUpdated(updatedBot.getUsername());
-
-        if (willBeEnabled && !wasEnabled) {
-            botService.notifyWebhookRegistered(updatedBot.getUsername());
+        BotEntity updatedBot = botService.updateBot(botEntity);
+        if (updatedBot == null) {
+            return ResponseEntity.notFound().build();
         }
 
         return ResponseEntity.ok(updatedBot);
@@ -147,15 +130,7 @@ public class BotController {
             return ResponseEntity.notFound().build();
         }
 
-        String username = existingBot.get().getUsername();
-        boolean wasEnabled = Boolean.TRUE.equals(existingBot.get().getEnable());
-
         botService.enableBot(request.getId());
-        botService.notifyBotUpdated(username);
-        if (!wasEnabled) {
-            botService.notifyWebhookRegistered(username);
-        }
-
         return ResponseEntity.ok().build();
     }
 
@@ -170,13 +145,13 @@ public class BotController {
             @Parameter(description = "機器人 ID", required = true)
             @RequestBody BotIdRequest request) {
         log.info("停用機器人 ID: {}", request.getId());
+
         Optional<BotEntity> existingBot = botService.getBotById(request.getId());
         if (existingBot.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        String username = existingBot.get().getUsername();
+
         botService.disableBot(request.getId());
-        botService.notifyBotUpdated(username);
         return ResponseEntity.ok().build();
     }
 
@@ -196,9 +171,8 @@ public class BotController {
         if (existingBot.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        String username = existingBot.get().getUsername();
+
         botService.deleteBot(request.getId());
-        botService.notifyBotUpdated(username);
         return ResponseEntity.noContent().build();
     }
 }
