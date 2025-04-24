@@ -6,16 +6,6 @@ import java.util.Optional;
 
 public interface BotService {
     /**
-     * 發送 Bot 更新通知
-     */
-    void notifyBotUpdated(String username);
-
-    /**
-     * 發送 Webhook 註冊通知
-     */
-    void notifyWebhookRegistered(String username);
-
-    /**
      * 獲取所有機器人
      */
     List<BotEntity> getAllBots();

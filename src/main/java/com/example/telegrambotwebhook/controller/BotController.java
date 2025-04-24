@@ -16,8 +16,10 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,6 +37,29 @@ import org.springframework.web.bind.annotation.RestController;
 public class BotController {
 
     private final BotService botService;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+
+    @Value("${kafka.topic.bot-update}")
+    private String botUpdateTopic;
+
+    @Value("${kafka.topic.webhook-registered}")
+    private String webhookRegisteredTopic;
+
+    /**
+     * 發送 Bot 更新通知
+     */
+    private void notifyBotUpdated(String username) {
+        log.info("發送 Bot 更新通知: {}", username);
+        kafkaTemplate.send(botUpdateTopic, username);
+    }
+
+    /**
+     * 發送 Webhook 註冊通知
+     */
+    private void notifyWebhookRegistered(String username) {
+        log.info("發送 Webhook 註冊通知: {}", username);
+        kafkaTemplate.send(webhookRegisteredTopic, username);
+    }
 
     @GetMapping
     @Operation(summary = "獲取所有機器人", description = "取得所有註冊的 Telegram 機器人清單")
@@ -81,6 +106,14 @@ public class BotController {
                 .build();
 
         BotEntity savedBot = botService.createBot(botEntity);
+
+        // 發送通知
+        notifyBotUpdated(savedBot.getUsername());
+
+        if (Boolean.TRUE.equals(savedBot.getEnable())) {
+            notifyWebhookRegistered(savedBot.getUsername());
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(savedBot);
     }
 
@@ -98,6 +131,14 @@ public class BotController {
             @RequestBody BotUpdateRequest request) {
         log.info("更新機器人 ID: {}", request.getId());
 
+        Optional<BotEntity> existingBot = botService.getBotById(request.getId());
+        if (existingBot.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        boolean wasEnabled = Boolean.TRUE.equals(existingBot.get().getEnable());
+        boolean willBeEnabled = Boolean.TRUE.equals(request.getEnable());
+
         BotEntity botEntity = BotEntity.builder()
                 .id(request.getId())
                 .username(request.getUsername())
@@ -108,6 +149,13 @@ public class BotController {
         BotEntity updatedBot = botService.updateBot(botEntity);
         if (updatedBot == null) {
             return ResponseEntity.notFound().build();
+        }
+
+        // 發送通知
+        notifyBotUpdated(updatedBot.getUsername());
+
+        if (willBeEnabled && !wasEnabled) {
+            notifyWebhookRegistered(updatedBot.getUsername());
         }
 
         return ResponseEntity.ok(updatedBot);
@@ -130,7 +178,18 @@ public class BotController {
             return ResponseEntity.notFound().build();
         }
 
+        String username = existingBot.get().getUsername();
+        boolean wasEnabled = Boolean.TRUE.equals(existingBot.get().getEnable());
+
         botService.enableBot(request.getId());
+
+        // 發送通知
+        notifyBotUpdated(username);
+
+        if (!wasEnabled) {
+            notifyWebhookRegistered(username);
+        }
+
         return ResponseEntity.ok().build();
     }
 
@@ -151,7 +210,12 @@ public class BotController {
             return ResponseEntity.notFound().build();
         }
 
+        String username = existingBot.get().getUsername();
         botService.disableBot(request.getId());
+
+        // 發送通知
+        notifyBotUpdated(username);
+
         return ResponseEntity.ok().build();
     }
 
@@ -172,7 +236,12 @@ public class BotController {
             return ResponseEntity.notFound().build();
         }
 
+        String username = existingBot.get().getUsername();
         botService.deleteBot(request.getId());
+
+        // 發送通知
+        notifyBotUpdated(username);
+
         return ResponseEntity.noContent().build();
     }
 }

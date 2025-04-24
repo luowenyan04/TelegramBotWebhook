@@ -10,10 +10,8 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -23,31 +21,6 @@ public class BotServiceImpl implements BotService {
 
     private final BotRepository botRepository;
     private final BotManager botManager;
-    private final KafkaTemplate<String, String> kafkaTemplate;
-
-    @Value("${kafka.topic.bot-update}")
-    private String botUpdateTopic;
-
-    @Value("${kafka.topic.webhook-registered}")
-    private String webhookRegisteredTopic;
-
-    /**
-     * 發送 Bot 更新通知
-     */
-    @Override
-    public void notifyBotUpdated(String username) {
-        log.info("發送 Bot 更新通知: {}", username);
-        kafkaTemplate.send(botUpdateTopic, username);
-    }
-
-    /**
-     * 發送 Webhook 註冊通知
-     */
-    @Override
-    public void notifyWebhookRegistered(String username) {
-        log.info("發送 Webhook 註冊通知: {}", username);
-        kafkaTemplate.send(webhookRegisteredTopic, username);
-    }
 
     /**
      * 獲取所有機器人
@@ -94,15 +67,7 @@ public class BotServiceImpl implements BotService {
     @Transactional
     public BotEntity createBot(BotEntity botEntity) {
         log.info("創建新機器人: {}", botEntity.getUsername());
-        BotEntity savedBot = saveBot(botEntity);
-
-        notifyBotUpdated(savedBot.getUsername());
-
-        if (Boolean.TRUE.equals(savedBot.getEnable())) {
-            notifyWebhookRegistered(savedBot.getUsername());
-        }
-
-        return savedBot;
+        return saveBot(botEntity);
     }
 
     /**
@@ -119,17 +84,7 @@ public class BotServiceImpl implements BotService {
             return null;
         }
 
-        boolean wasEnabled = Boolean.TRUE.equals(existingBot.get().getEnable());
-        boolean willBeEnabled = Boolean.TRUE.equals(botEntity.getEnable());
-
-        BotEntity updatedBot = saveBot(botEntity);
-        notifyBotUpdated(updatedBot.getUsername());
-
-        if (willBeEnabled && !wasEnabled) {
-            notifyWebhookRegistered(updatedBot.getUsername());
-        }
-
-        return updatedBot;
+        return saveBot(botEntity);
     }
 
     /**
@@ -218,15 +173,9 @@ public class BotServiceImpl implements BotService {
         evictBotCache(username);
         evictBotCacheById(id);
 
-        // 發送通知
-        notifyBotUpdated(username);
-
         // 註冊 webhook
-        if (!wasEnabled) {
-            log.info("註冊機器人 webhook: {}", username);
-            botManager.registerWebhook(bot);
-            notifyWebhookRegistered(username);
-        }
+        log.info("註冊機器人 webhook: {}", username);
+        botManager.registerWebhook(bot);
     }
 
     /**
@@ -259,9 +208,6 @@ public class BotServiceImpl implements BotService {
         // 清除快取
         evictBotCache(username);
         evictBotCacheById(id);
-
-        // 發送通知
-        notifyBotUpdated(username);
 
         // 從 Telegram 取消註冊這個機器人的 webhook
         if (botManager.isWebhookRegistered(username)) {
@@ -299,9 +245,6 @@ public class BotServiceImpl implements BotService {
         // 清除快取
         evictBotCache(username);
         evictBotCacheById(id);
-
-        // 發送通知
-        notifyBotUpdated(username);
 
         log.info("機器人 {} 已從資料庫中刪除", username);
     }
