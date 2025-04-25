@@ -45,7 +45,7 @@ services:
     restart: always
     environment:
       SPRING_APPLICATION_NAME: telegram-bot-app-1
-      TELEGRAM_BOT_WEBHOOK_DOMAIN: https://9404-106-105-244-78.ngrok-free.app  # 本地測試用 localhost
+      TELEGRAM_BOT_WEBHOOK_DOMAIN: https://1b16-106-105-244-78.ngrok-free.app
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/telegrambot?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
@@ -58,7 +58,7 @@ services:
     restart: always
     environment:
       SPRING_APPLICATION_NAME: telegram-bot-app-2
-      TELEGRAM_BOT_WEBHOOK_DOMAIN: https://9404-106-105-244-78.ngrok-free.app # 本地測試用 localhost
+      TELEGRAM_BOT_WEBHOOK_DOMAIN: https://1b16-106-105-244-78.ngrok-free.app
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/telegrambot?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
@@ -76,5 +76,20 @@ services:
       - app-node-1
       - app-node-2
 
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: telegram-bot-ngrok
+    ports:
+      - "4040:4040"
+    environment:
+      NGROK_AUTHTOKEN: 2hDwgSkQll0INonwZW1S5RZROMN_QH4C9NRBRC1Sz1RWqGsR
+    command: http nginx:80 --log=stdout
+    depends_on:
+      - nginx
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:4040/api/tunnels" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 volumes:
   mysql-data:
