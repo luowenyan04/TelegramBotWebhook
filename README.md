@@ -1,17 +1,4 @@
-# Telegram Bot 高可用性架構
-
-這個專案實現了一個支援高可用性的 Telegram Bot 管理系統，允許使用者透過 API 管理多個 Telegram Bot，並確保系統的穩定性和可擴展性。整合了 Docker 和 ngrok，便於本地開發和測試。
-
-## 功能特點
-
-- **多 Bot 管理**：創建、更新、啟用、停用和刪除 Telegram Bot
-- **高可用性架構**：支援多節點部署，確保系統穩定運行
-- **Webhook 自動註冊**：自動處理與 Telegram API 的 Webhook 註冊
-- **快取機制**：使用本地快取提高性能，並透過 Kafka 同步多節點的快取
-- **Swagger API 文檔**：提供完整的 API 說明文檔
-- **基於 Docker 的部署**：簡化系統部署和擴展
-- **整合 ngrok**：直接在 Docker 環境中啟用外部訪問
-- **自動化啟動腳本**：一鍵配置和啟動所有服務
+# Telegram Bot Multi-Node Webhook Example
 
 ## 系統架構
 
@@ -31,13 +18,13 @@
          +------+-------+           +--------+------+
          |              |           |               |
    handler(botA)   handler(botB)  handler(botA)   handler(botB)
+         |              |           |               |
+         +------+-------+           +--------+------+
+                |                            |
+                +-------------+--------------+
+                              |
+                            MySQL
 ```
-
-- **Nginx**：負載均衡器，分發來自 Telegram 的請求
-- **Spring Boot 應用**：處理 Webhook 和 Bot 管理
-- **MySQL**：存儲 Bot 配置和狀態
-- **Kafka**：提供節點間的通信機制，用於快取同步
-- **ngrok**：提供臨時公網地址，便於本地測試
 
 ## 快速開始
 
@@ -45,7 +32,6 @@
 
 - Docker 和 Docker Compose
 - ngrok 帳號和 authtoken（免費版即可，請從 [ngrok 官網](https://ngrok.com/) 獲取）
-- Git
 
 ### 自動化啟動（推薦）
 
@@ -68,6 +54,7 @@
    ```
 
 腳本將自動完成以下操作：
+
 - 配置 ngrok authtoken
 - 啟動所有必要的 Docker 服務
 - 自動獲取 ngrok 公網網址
@@ -77,9 +64,9 @@
 
 完成後，您可以通過顯示的 Swagger UI 地址（如 `https://xxxx-xx-xx-xx-xx.ngrok-free.app/swagger-ui/index.html`）來訪問和管理您的 Telegram Bot API。
 
-### 手動設置（進階用戶）
+### 手動設置
 
-如果您需要手動配置系統，請按照以下步驟：
+如果需要手動配置系統，請按照以下步驟：
 
 1. 克隆專案並進入目錄
    ```bash
@@ -100,8 +87,8 @@
    ```
 
 4. 獲取 ngrok 公網地址
-   - 開啟瀏覽器訪問 http://localhost:4040
-   - 找到並記錄 https 公網網址
+    - 開啟瀏覽器訪問 http://localhost:4040
+    - 找到並記錄 https 公網網址
 
 5. 更新 webhook 域名設定
    ```bash
@@ -122,11 +109,13 @@
 ## API 使用
 
 訪問 Swagger UI 了解和測試 API：
+
 ```
 https://xxxx-xx-xx-xx-xx.ngrok-free.app/swagger-ui/index.html
 ```
 
 主要 API 端點：
+
 - `POST /api/bots` - 創建新 Bot
 - `PUT /api/bots` - 更新 Bot
 - `PUT /api/bots/enable` - 啟用 Bot
@@ -141,11 +130,12 @@ https://xxxx-xx-xx-xx-xx.ngrok-free.app/swagger-ui/index.html
 ### application.yml
 
 主要配置項：
+
 ```yaml
 spring:
   datasource:
     url: jdbc:mysql://mysql:3306/telegrambot?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-  
+
   kafka:
     bootstrap-servers: kafka:29092
 
@@ -163,6 +153,7 @@ telegram-bot:
 ### docker-compose.yml
 
 服務配置：
+
 ```yaml
 version: '3.8'
 
@@ -170,28 +161,28 @@ services:
   mysql:
     image: mysql:8.0
     # ...設定略...
-    
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     # ...設定略...
-      
+
   kafka:
     image: confluentinc/cp-kafka:latest
     # ...設定略...
-      
+
   app-node-1:
     build: .
     environment:
       TELEGRAM_BOT_WEBHOOK_DOMAIN: https://xxxx-xx-xx-xx-xx.ngrok-free.app
       # ...其他設定略...
-      
+
   app-node-2:
-    # ...設定類似 app-node-1...
-      
+  # ...設定類似 app-node-1...
+
   nginx:
     image: nginx:latest
     # ...設定略...
-      
+
   ngrok:
     image: ngrok/ngrok:latest
     environment:
@@ -233,11 +224,13 @@ services:
 常見問題解決方案：
 
 ### MySQL 連接錯誤
+
 - 確保 MySQL 服務正常運行
 - 檢查連接字串，特別是 `allowPublicKeyRetrieval=true` 設定
 - 如果出現 "Public Key Retrieval is not allowed" 錯誤，確保在連接字串中添加 `allowPublicKeyRetrieval=true`
 
 ### Webhook 註冊失敗
+
 - 確保 ngrok 正常運行並獲取到公網地址
 - 檢查 `TELEGRAM_BOT_WEBHOOK_DOMAIN` 環境變數是否設置正確
 - 檢查 Telegram Bot Token 是否有效
@@ -249,10 +242,12 @@ services:
   ```
 
 ### 節點間通信問題
+
 - 確保 Kafka 服務正常運行
 - 檢查 Kafka 主題配置是否正確
 
 ### ngrok 相關問題
+
 - 如果 ngrok 啟動失敗，檢查 authtoken 是否正確
 - 使用 `docker-compose logs ngrok` 查看詳細日誌
 - 免費版 ngrok 有連接數和帶寬限制，如需長期使用請考慮升級
