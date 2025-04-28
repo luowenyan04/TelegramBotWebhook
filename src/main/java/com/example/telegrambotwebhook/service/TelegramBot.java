@@ -30,7 +30,6 @@ public class TelegramBot extends TelegramWebhookBot {
 
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
-        log.debug("收到 Webhook 更新: {}", update);
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
@@ -42,7 +41,7 @@ public class TelegramBot extends TelegramWebhookBot {
     }
 
     private SendMessage handleMessage(long chatId, String messageText) {
-        log.info("機器人 {} 收到訊息: {}", botUsername, messageText);
+        log.info("Bot {} received message: {}", botUsername, messageText);
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
 
@@ -62,7 +61,7 @@ public class TelegramBot extends TelegramWebhookBot {
      * @throws TelegramApiException 如果設定失敗
      */
     public void setWebhook(SetWebhook setWebhook) throws TelegramApiException {
-        log.info("為機器人 {} 設定 Webhook: {}", botUsername, setWebhook.getUrl());
+        log.info("Setting webhook for Bot {}, Webhook: {}", botUsername, setWebhook.getUrl());
         execute(setWebhook);
     }
 
@@ -72,9 +71,9 @@ public class TelegramBot extends TelegramWebhookBot {
      * @throws TelegramApiException 如果移除失敗
      */
     public void deleteWebhook() throws TelegramApiException {
-        log.info("正在取消機器人 {} 的 webhook 設定", botUsername);
+        log.info("Deleting webhook for Bot {}", botUsername);
         DeleteWebhook deleteWebhook = new DeleteWebhook();
         execute(deleteWebhook);
-        log.info("機器人 {} 的 webhook 已成功取消", botUsername);
+        log.info("Bot {} deleted webhook", botUsername);
     }
 }

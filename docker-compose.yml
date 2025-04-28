@@ -45,7 +45,7 @@ services:
     restart: always
     environment:
       SPRING_APPLICATION_NAME: telegram-bot-app-1
-      TELEGRAM_BOT_WEBHOOK_DOMAIN: https://1b16-106-105-244-78.ngrok-free.app
+      TELEGRAM_BOT_WEBHOOK_DOMAIN: https://1d9e-106-105-244-78.ngrok-free.app
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/telegrambot?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
@@ -58,7 +58,7 @@ services:
     restart: always
     environment:
       SPRING_APPLICATION_NAME: telegram-bot-app-2
-      TELEGRAM_BOT_WEBHOOK_DOMAIN: https://1b16-106-105-244-78.ngrok-free.app
+      TELEGRAM_BOT_WEBHOOK_DOMAIN: https://1d9e-106-105-244-78.ngrok-free.app
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/telegrambot?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:

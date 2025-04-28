@@ -17,23 +17,18 @@ public class MessageHandlerServiceImpl implements MessageHandlerService {
 
     private final BotService botService;
 
-    /**
-     * 處理來自 Telegram 的更新
-     */
     @Override
     public BotApiMethod<?> processUpdate(String username, Update update) {
-        log.debug("處理來自 {} 的更新", username);
+        log.debug("Process Message From Bot {}, Update: {}", username, update);
 
-        // 從 BotService 獲取機器人實體（使用其快取機制）
         BotEntity botEntity = botService.getBotByUsername(username)
                 .orElse(null);
 
         if (botEntity == null || !Boolean.TRUE.equals(botEntity.getEnable())) {
-            log.warn("機器人 {} 不存在或未啟用", username);
+            log.warn("Bot Not Found or Not Enabled: {}", username);
             return null;
         }
 
-        // 創建臨時 Bot 實例處理更新
         TelegramBot tempBot = new TelegramBot(
                 botEntity.getToken(),
                 botEntity.getUsername(),

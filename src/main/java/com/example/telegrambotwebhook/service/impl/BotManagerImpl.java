@@ -35,22 +35,21 @@ public class BotManagerImpl implements BotManager {
     @PostConstruct
     @Override
     public void init() {
-        log.info("開始初始化 Telegram 機器人 webhook...");
+        log.info("Initializing Telegram 機器人 webhook...");
 
         try {
             List<BotEntity> enabledBots = botRepository.findByEnableTrue();
             enabledBots.forEach(this::registerWebhook);
-            log.info("已成功註冊 {} 個機器人的 webhook", enabledBots.size());
+            log.info("Registered webhooks: {}", registeredWebhooks);
         } catch (DataAccessException e) {
-            log.error("資料庫存取錯誤，可能是資料表尚未建立: {}", e.getMessage());
-            log.info("系統將繼續啟動，但機器人功能可能無法正常運作");
+            log.error("Initializing Telegram bots failed: {}", e.getMessage());
         }
     }
 
     @PreDestroy
     @Override
     public void deregisterAllWebhooks() {
-        log.info("系統關閉中，正在取消所有機器人的 webhook 註冊...");
+        log.info("Deregistering all webhooks started...");
 
         Set<String> webhooksCopy = new HashSet<>(registeredWebhooks);
         int successCount = 0;
@@ -65,18 +64,18 @@ public class BotManagerImpl implements BotManager {
                     failureCount++;
                 }
             } catch (Exception e) {
-                log.error("取消註冊機器人 {} 的 webhook 時發生錯誤: {}", username, e.getMessage(), e);
+                log.error("Failed to deregister webhook for user {} with message: {}", username, e.getMessage(), e);
                 failureCount++;
             }
         }
 
-        log.info("所有機器人的 webhook 註冊已取消。成功: {}, 失敗: {}", successCount, failureCount);
+        log.info("Deregistering all webhooks completed. Success: {}, Failure: {}", successCount, failureCount);
         registeredWebhooks.clear();
     }
 
     @Override
     public boolean registerWebhook(BotEntity botEntity) {
-        log.debug("註冊機器人 webhook: {}", botEntity.getUsername());
+        log.debug("Registering webhook: {}", botEntity.getUsername());
 
         webhookLock.lock();
         try {
@@ -104,10 +103,10 @@ public class BotManagerImpl implements BotManager {
 
                 tempBot.setWebhook(setWebhook);
                 registeredWebhooks.add(botEntity.getUsername());
-                log.info("機器人 {} 設定完成 Webhook: {}", botEntity.getUsername(), webhookUrl);
+                log.info("Registered webhook for bot {} with URL: {}", botEntity.getUsername(), webhookUrl);
                 return true;
             } catch (TelegramApiException e) {
-                log.error("註冊機器人 {} 的 webhook 時發生錯誤: {}", botEntity.getUsername(), e.getMessage(), e);
+                log.error("Registering webhook for bot {} failed with message: {}", botEntity.getUsername(), e.getMessage(), e);
                 return false;
             }
         } finally {
@@ -117,12 +116,11 @@ public class BotManagerImpl implements BotManager {
 
     @Override
     public boolean deregisterWebhook(String username) {
-        log.info("取消註冊機器人 webhook: {}", username);
+        log.debug("Deregistering webhook: {}", username);
 
-        // 獲取 bot 實體資訊
         BotEntity botEntity = botRepository.findByUsername(username).orElse(null);
         if (botEntity == null) {
-            log.warn("無法找到要取消註冊 webhook 的機器人: {}", username);
+            log.warn("No bot found to deregister webhook for: {}", username);
             return false;
         }
 
@@ -147,10 +145,10 @@ public class BotManagerImpl implements BotManager {
 
                 // 從註冊記錄中移除
                 registeredWebhooks.remove(username);
-                log.info("機器人 {} 的 webhook 已成功取消註冊", username);
+                log.info("Deregistered webhook for bot {}", username);
                 return true;
             } catch (TelegramApiException e) {
-                log.error("取消註冊機器人 {} 的 webhook 時發生錯誤: {}", username, e.getMessage(), e);
+                log.error("Deregistering webhook for bot {} failed with message: {}", username, e.getMessage(), e);
                 return false;
             }
         } finally {

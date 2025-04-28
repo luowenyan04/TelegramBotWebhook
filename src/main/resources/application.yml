@@ -49,9 +49,6 @@ springdoc:
     urls[0].url: /api-docs
     urls[0].name: API V1
 
-#telegram-bot:
-#  webhookDomain: https://0b5b-106-105-244-78.ngrok-free.app
-#  registerPath: /webhook
 telegram-bot:
-  webhookDomain: ${TELEGRAM_BOT_WEBHOOK_DOMAIN:https://9404-106-105-244-78.ngrok-free.app}
+  webhookDomain: ${TELEGRAM_BOT_WEBHOOK_DOMAIN:}
   registerPath: /webhook

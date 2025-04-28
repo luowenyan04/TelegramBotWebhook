@@ -25,10 +25,10 @@ public class BotEntity {
     @Schema(description = "機器人 ID", example = "1")
     private Long id;
 
-    @Schema(description = "機器人使用者名稱", example = "my_telegram_bot", required = true)
+    @Schema(description = "機器人使用者名稱", example = "my_telegram_bot")
     private String username;
 
-    @Schema(description = "機器人 API Token", example = "1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZ", required = true)
+    @Schema(description = "機器人 API Token", example = "1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     private String token;
 
     @Schema(description = "機器人是否啟用", example = "true", defaultValue = "true")
